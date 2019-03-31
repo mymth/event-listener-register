@@ -1,0 +1,38 @@
+{
+  "name": "event-listener-register",
+  "version": "1.0.0",
+  "description": "add event listeners with name, remove them by name in native JavaScript",
+  "main": "dist/event-listener-register.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "mocha": "^6.0.2",
+    "rollup": "^1.7.4",
+    "sinon": "^7.3.1",
+    "uglify-es": "^3.3.9",
+    "unexpected": "^11.2.0"
+  },
+  "scripts": {
+    "build": "rollup -f umd -n listenerRegsiter -o dist/listener-register.js listener-register.js",
+    "minify": "uglifyjs -c -m -o dist/listener-register.min.js dist/listener-register.js",
+    "build-all": "npm run build && npm run minify",
+    "watch": "rollup -w -f umd -n listenerRegsiter -o dist/listener-register.js listener-register.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mymth/event-listener-register.git"
+  },
+  "keywords": [
+    "event",
+    "listener",
+    "addEventListener",
+    "removeEventListener",
+    "on",
+    "off"
+  ],
+  "author": "Hidenao Miyamoto <miyamo.4@gamil.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/mymth/event-listener-register#readme"
+}

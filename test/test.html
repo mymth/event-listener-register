@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mocha Tests</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+    <style type="text/css">
+      #test-container {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="test-container">
+      <input type="text">
+    </div>
+    <div id="mocha"></div>
+
+    <script src="../node_modules/unexpected/unexpected.js"></script>
+    <script src="../node_modules/sinon/pkg/sinon.js"></script>
+    <script src="../node_modules/mocha/mocha.js"></script>
+
+    <script class="mocha-init">
+      mocha.setup('bdd');
+      mocha.checkLeaks();
+    </script>
+    <script class="setup">
+      /* eslint-disable no-unused-vars */
+      var expect = weknowhow.expect
+
+      var listenerRegistries;
+      var origWeakMap = window.WeakMap;
+      window.WeakMap = function (...args) {
+        return listenerRegistries = new origWeakMap(...args);
+      };
+    </script>
+    <script src="../dist/listener-register.js"></script>
+    <script class="before">
+      /* eslint-disable no-unused-vars */
+      var target = document.getElementById('test-container').firstChild;
+      var { addListener, removeListener } = listenerRegsiter;
+
+      function getListenerRegistration() {
+        const registry = listenerRegistries.get(target);
+        if (registry) {
+          return Object.keys(registry).reduce((entries, eventType) => {
+            const listeners = registry[eventType];
+            entries[eventType] =  {
+              forBubble: [...listeners.forBubble.values()],
+              forCapture: [...listeners.forCapture.values()],
+              byName: listeners.byName,
+            };
+            return entries;
+          }, {});
+        }
+      }
+    </script>
+    <script src="./addListener.js"></script>
+    <script src="./removeListener.js"></script>
+    <script class="mocha-exec">
+      mocha.run(function () {
+        window.WeakMap = origWeakMap;
+      });
+    </script>
+  </body>
+</html>
