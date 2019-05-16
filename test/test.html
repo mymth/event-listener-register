@@ -12,9 +12,7 @@
     </style>
   </head>
   <body>
-    <div id="test-container">
-      <input type="text">
-    </div>
+    <div id="test-container"></div>
     <div id="mocha"></div>
 
     <script src="../node_modules/unexpected/unexpected.js"></script>
@@ -38,26 +36,12 @@
     <script src="../dist/listener-register.js"></script>
     <script class="before">
       /* eslint-disable no-unused-vars */
-      var target = document.getElementById('test-container').firstChild;
-      var { addListener, removeListener } = listenerRegsiter;
-
-      function getListenerRegistration() {
-        const registry = listenerRegistries.get(target);
-        if (registry) {
-          return Object.keys(registry).reduce((entries, eventType) => {
-            const listeners = registry[eventType];
-            entries[eventType] =  {
-              forBubble: [...listeners.forBubble.values()],
-              forCapture: [...listeners.forCapture.values()],
-              byName: listeners.byName,
-            };
-            return entries;
-          }, {});
-        }
-      }
+      var testContainer = document.getElementById('test-container');
+      var { addListener, removeListener, getListeners } = listenerRegsiter;
     </script>
     <script src="./addListener.js"></script>
     <script src="./removeListener.js"></script>
+    <script src="./getListeners.js"></script>
     <script class="mocha-exec">
       mocha.run(function () {
         window.WeakMap = origWeakMap;

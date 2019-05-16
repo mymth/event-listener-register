@@ -4,7 +4,7 @@ Add event listeners with name and remove them by name in native JavaScript.
 
 This module is intended for a support tool to rewrite jQuery dependent programs in native JavaScript.
 
-The module provides wrapper functions for `EventTarget.addEventListener()` and `removeEventListener()` that allow users to manage event listeners by name and handle multiple listeners in a single call. It also retains added listeners internally with WeakMap using event target for the key.
+The module provides wrapper functions for `EventTarget.addEventListener()` and `removeEventListener()` that allow users to manage event listeners by name and handle multiple listeners in a single call.
 
 ## Usage
 
@@ -17,10 +17,10 @@ npm install --save event-listener-register
 and import the functions.
 
 ```javascript
-import { addListener, removeListener } from 'event-listener-register/listener-register';
+import { addListener, removeListener, getListeners } from 'event-listener-register/listener-register';
 
 // or import as CommonJS module
-const { addListener, removeListener } = require('event-listener-register');
+const { addListener, removeListener, getListeners } = require('event-listener-register');
 ```
 
 For browser, load the package from CDN and expose the functions.
@@ -28,7 +28,7 @@ For browser, load the package from CDN and expose the functions.
 ```html
 <script src="https://cdn.jsdelivr.net/npm/event-listener-register/dist/listener-register.min.js"></script>
 <script>
-  var { addListener, removeListener } = listenerRegsiter;
+  var { addListener, removeListener, getListeners } = listenerRegsiter;
 </script>
 ```
 
@@ -66,7 +66,7 @@ addListener(el, [
 ]);
 
 // with object
-// (note: listeners for capture phase are not supprted)
+// - listeners for capture phase are not supprted
 addListener(el, {
   click: onClick,
   'blur.myListener': onBlur,
@@ -77,23 +77,31 @@ addListener(el, {
 
 _To remove listener:_
 ```javascript
+// remove all listeners
+removeListener(el);
+
+// remove all listeners added to an event type
+removeListener(el, 'mouseenter');
+
+// remove all listeners with a name (regardless of the type)
+removeListener(el, '', 'myListener');
+removeListener(el, '.myListener');
+
 // remove a listener
 removeListener(el, 'click', 'myListener');
 
 // remove a listener using name as type suffix
 removeListener(el, 'click.myListener');
 
-// remove all listeners added to an event type
-removeListener(el, 'mouseenter');
-
 // remove a listener without name
 removeListener(el, 'click', onClick);
 removeListener(el, 'mouseenter', onMouseEnter, {capture: true});
 
 // remove multiple listeners
-// with space-separated types
+// with space-separated types/names
 removeListener(el, 'click blur', 'myListener');
 removeListener(el, 'mouseenter mouseleave', onMouseEnter, true);
+removeListener(el, '.myListener .extraListener');
 
 // with array
 removeListener(el, [
@@ -102,16 +110,36 @@ removeListener(el, [
   ['click touchstart', onClick],
   ['mouseenter', onMouseEnter, {capture: true}],
   'focus',  // synonym of ['focus']
+  ['.myListener'],
 ]);
 
 // with object
-// (note: listeners for capture phase without name are not supprted)
+// - listeners for capture phase without name are not supprted
+// - falsy values indicate removal of all listeners matching the types/names
 removeListener(el, {
   click: 'myListener',
-  'blur.myListener': null,  // value is ignored if type has suffix
+  'blur.myListener': null,
   'mouseenter mouseleave': onMousEnter,
-  focus: undefined,  // falsy values are treated as removal of all listeners
+  focus: undefined,
+  '.myListener': false,
 });
+```
+
+_To retrieve listeners:_
+```javascript
+// retrieve all listeners
+getListeners(el);
+
+// retrieve listeners with name
+getListeners(el, {name: 'myListener'});
+
+// retrieve listeners for a event type
+getListeners(el, {type: 'click'});
+
+// retrieve listeners with function
+getListeners(el, {fn: onClick});
+getListeners(el, {fn: onMousEnter, capture: true});
+
 ```
 
 ## API
@@ -119,18 +147,15 @@ removeListener(el, {
 **addListener(target, type, listener[, options][, name]])**  
 **addListener(target, listeners)**
 
-Adds one or multiple event listeners to an event target and returns the result.
+Adds one or multiple event listeners to an event target.
 
-The first form is to add a single event listener to one or multiple event types. (single mode)
+The first form is to add a single event listener to one or multiple event types.
 
-User can name the listener by providing it as the `name` argument or the suffix of event type. Listener name as type suffix has higher priority than the `name` argument. If both are provided, the function uses the suffix for the listener name. When adding listener to multiple types, listener name as the argument is applied to all types, but name as type suffix has to be added to each type.  
+Event listeners can be named by passing the name to the `name` argument or adding it to a event type as a suffix.  
+While listener name as argument is applied to all event types in the `type` argument, the one as suffix is only applied to the type it is added. It also has higher priority than the one as argument.
 
-The scope of listener name is event type of a target. You can use the same name for different types or different targets, but cannot add different listeners to the same event type of a target using the same name.  
-
-The function has protection to prevent a listener from being added repeatedly to the same target. You can add a listener only once per phase (bubble or capture) of an event type of an event target.  
-
-The second form is to add multiple listeners. (multi mode) `listeners` can be either an array or an object.  
-When using object, listener names need to be provided as type suffix and listeners for capture phase cannot be added.
+The second form is to add multiple listeners. `listeners` can be either an array or an object.  
+When using object, listener names have to be provided as type suffix and listeners for capture phase are not supproted.
 
 *Parameters:*
 
@@ -148,7 +173,7 @@ When using object, listener names need to be provided as type suffix and listene
   Option value(s) used for the `options`/`useCapture` argument of [`addEventListener()`](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener) call
 
 - **name** _[String]_ _(optional)_  
-  Name for the listener. Must be unique within the same event type of a target  
+  Name for the listener  
   When `type` has suffix, this value is overridden by it. 
 
 - **listeners** _[Array|Object]_  
@@ -157,44 +182,41 @@ When using object, listener names need to be provided as type suffix and listene
   – Object in which the keys are types and the values are listener functions  
   **{** type **:** listener **, ... }**  
 
-*Return value:*
-
-- _[Boolean|Array|Object]_  
-  - _Single mode:_  
-    Boolean value that represents whether the listener is added successfully. For multiple types, array of each type's result.  
-  - _Multi mode with array:_  
-    Array of each of passed listener parameters' result
-  - _Multi mode with object:_  
-    Object of the type–result pairs of passed event types  
-
      
-**removeListener(target, type[, listener[, options]])**  
+**removeListener(target[, type[, listener[, options]]])**  
 **removeListener(target, listeners)**
 
-Remove one or multiple event listeners from a event target.
+Remove one or multiple event listeners from an event target.
 
-The first form is to remove a single event listener (single mode) or to remove all event listeners (bulk mode) from one or multiple event types
+The first form is to remove a single event listener, all event listeners or event listeners for certain event types or listener names.
 
-User can specify the listener to remove using the listener name by providing it as the `listener` argument or the suffix of event type. Listener name as type suffix has higher priority than the `listener` argument. If both are provided, the function uses the suffix for the listener name. When adding listener to multiple types, listener name as the argument is applied to all types, but name as type suffix has to be added to each type.  
-User can also specify the listener by passing the listener function and the options used to add to the corresponding arguments. The options doesn't have to be the same but whether it's for capture phase needs to match.
+The listener to remove can be specified by name or reference to the listener function. When a listener name is passed to the `listener` argument, the `options` argument is completely ignored. In contrast, omitting `options` works as a shorthand for specifying `{capture: false}` when passing a listener function.  
 
-If the listener to remove is not specified, the function removes all listeners added to the event type(s).
+If the listener to remove is not specified, all event listeners listening for the specified event type(s) will be removed.
 
-The second form is to remove multiple listeners. (multi mode) `listeners` can be either an array or an object.  
-When using object, unnamed listeners for capture phase cannot be removed. If a falsy value is set to the object's value, it is considered as bulk remove. And if type has suffix, the object's value is ignored. 
+Removing event listeners across the types can be done by passing an empty string to the `type` argument. You can specify the listeners by name or by function in this case, too. To specifying listeners by name, you can also pass the listener name preceded by `.` to the `type` argument. (a type starting with `.` is treated as an empty type + suffix)
+
+If neither types nor listeners are specified, all event listeners added to the event target will be removed.
+
+The second form is to remove multiple listeners. `listeners` can be either an array or an object.  
+When using object, listeners for capture phase without name are not supproted. And you can use any falsy value to omit specifying a listener name/function. 
 
 *Parameters:*
 
 - **target** _[EventTarget]_  
   Event target to remove listener
 
-- **type** _[String]_  
+- **type** _[String]_ _(optional)_  
   One or more space-separated event type listening for  
-  Each type can have a suffix used for listener name.
+  Each type can have a suffix used for listener name.  
+  If the value is empty, the function retrieves the listeners to remove ignoring the type.  
+  If a type starts with `.`, the function takes it as en empty type with suffix.  
+  When this parameter is omitted, the function removes all listeners added to the target.
 
 - **listener** _[Function|String]_ _(optional)_  
   Event listener function or the listener name used to add the listener  
-  When this parameter is omitted, the function removes all listeners added to the event type of the target. And when `type` has suffix, this parameter is ignored.
+  When a string is passed and `type` has suffix, this value is overridden by the suffix.  
+  When this parameter is omitted, the function removes all listeners lietening for the event type.
 
 - **options** _[Object|Boolean]_ _(optional)_  
   Option value(s) used for the `options`/`useCapture` argument of [`removeEventListener()`](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/removeEventListener) call  
@@ -203,9 +225,37 @@ When using object, unnamed listeners for capture phase cannot be removed. If a f
 - **listeners** _[Array|Object]_  
   – Array of parameters for each listener or types to remove all listeners  
   **[** **[** type _[_, listener _[_, options _]_ _]_ **]** _|_ type **, ... ]**  
-  – Object in which the keys are types and the values are listener names, listener functions or any falsy values  
+  – Object in which the keys are types and the values are listener names or functions  
   **{** type **:** listener **, ... }**  
 
+     
+**getListeners(target[, criteria])**
+
+Retrieve the event listeners added to an event target.
+
+*Parameters:*
+
+- **target** _[EventTarget]_  
+  Event target to retrieve listeners
+
+- **criteria** _[Object]_ _(optional)_  
+  Criteria to narrow the result  
+  Properties:  
+  - `name` - _[String]_ - Listener name
+  - `type` - _[String]_ - Event type
+  - `fn` - _[Function]_ - Listener function
+  - `capture` - _[Boolean]_ - Phase of event the search for the listeners to be made  
+    If `true`, only listeners for capture phase are retrieved. If `false`, only listeners for bubble phase are retrieved.
+
+*Return value:*
+
+- _[Array]_  
+  Registration objects (parameters used on `addListener()` call) of the event listeners that meet the criteria.  
+  Properties:  
+  - `name` - _[String]_ - Listener name
+  - `type` - _[String]_ - Event type
+  - `fn` - _[Function]_ - Listener function
+  - `options` - _[Object|Boolean]_ - Value for `options`/`useCapture`
 
 ## License
 

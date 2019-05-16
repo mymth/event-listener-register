@@ -1,6 +1,6 @@
 {
   "name": "event-listener-register",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "add event listeners with name, remove them by name in native JavaScript",
   "main": "dist/event-listener-register.js",
   "directories": {
@@ -8,11 +8,11 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "mocha": "^6.0.2",
-    "rollup": "^1.7.4",
-    "sinon": "^7.3.1",
+    "mocha": "^6.1.4",
+    "rollup": "^1.12.0",
+    "sinon": "^7.3.2",
     "uglify-es": "^3.3.9",
-    "unexpected": "^11.2.0"
+    "unexpected": "^11.5.1"
   },
   "scripts": {
     "build": "rollup -f umd -n listenerRegsiter -o dist/listener-register.js listener-register.js",
